@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Header Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base: #0d1117;
+  --bg-surface: #161b22;
+  --bg-raised: #1c2128;
+  --border: #21262d;
+  --border-hover: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+  --accent: #1f6feb;
+  --accent-hover: #388bfd;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --red: #f85149;
+  --green-bg: #0d1f0f;
+  --yellow-bg: #1f1a0a;
+  --red-bg: #1f0a0a;
+  --green-border: #1a3d1f;
+  --yellow-border: #3d2e0a;
+  --red-border: #3d0f0f;
+}
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: #0a0e14;
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.shell {
+  width: 100%;
+  max-width: 1300px;
+  min-height: 680px;
+  background: var(--bg-base);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  display: flex;
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg-base);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo-mark {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.logo-mark svg { width: 18px; height: 18px; fill: #fff; }
+.logo-text { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+
+.nav { padding: 16px 12px; flex: 1; }
+.nav-group-label {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1.2px;
+  padding: 0 10px; margin: 12px 0 6px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px;
+  font-size: 13px; color: var(--text-secondary);
+  cursor: pointer; transition: all 0.15s;
+  margin-bottom: 2px;
+}
+.nav-item:hover { background: var(--bg-surface); color: var(--text-primary); }
+.nav-item.active { background: rgba(31,111,235,0.15); color: #58a6ff; }
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.7; }
+.nav-item.active svg { opacity: 1; }
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* MAIN */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-left { display: flex; flex-direction: column; gap: 2px; }
+.topbar-title { font-size: 20px; font-weight: 600; }
+.topbar-sub { font-size: 12px; color: var(--text-muted); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.topbar-status { font-size: 12px; color: var(--text-secondary); }
+
+.content { flex: 1; padding: 24px 28px; overflow-y: auto; }
+
+/* SEARCH ROW */
+.search-row {
+  display: flex; gap: 10px; margin-bottom: 22px;
+}
+
+.url-wrap {
+  flex: 1;
+  position: relative;
+  display: flex; align-items: center;
+}
+
+.url-icon {
+  position: absolute; left: 12px;
+  color: var(--text-muted);
+}
+.url-icon svg { width: 14px; height: 14px; }
+
+.url-input {
+  width: 100%; padding: 11px 14px 11px 36px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border 0.15s;
+}
+.url-input:focus { border-color: var(--accent); }
+.url-input::placeholder { color: var(--text-muted); }
+
+.btn-analyze {
+  padding: 11px 22px;
+  background: var(--accent);
+  border: none; border-radius: 10px;
+  color: #fff;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: background 0.15s;
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-analyze:hover { background: var(--accent-hover); }
+.btn-analyze:disabled { background: var(--bg-raised); color: var(--text-muted); cursor: not-allowed; }
+.btn-analyze svg { width: 14px; height: 14px; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* STATS */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 22px;
+}
+
+.stat {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.stat-label {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+.stat-val {
+  font-size: 26px; font-weight: 600; line-height: 1;
+}
+.stat-val.blue { color: #58a6ff; }
+.stat-val.red { color: var(--red); }
+.stat-val.yellow { color: var(--yellow); }
+.stat-val.green { color: var(--green); }
+.stat-sub {
+  font-size: 11px; color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.grid.full { grid-template-columns: 1fr; }
+
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: 12px; font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.panel-badge {
+  font-size: 11px; color: var(--text-muted);
+  background: var(--bg-raised);
+  padding: 2px 8px; border-radius: 20px;
+}
+
+.panel-body { padding: 8px; }
+
+/* HEADER ROWS */
+.h-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 10px; border-radius: 8px;
+  transition: background 0.1s;
+}
+.h-row:hover { background: var(--bg-raised); }
+
+.dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 4px;
+}
+.dot.green { background: var(--green); }
+.dot.yellow { background: var(--yellow); }
+.dot.red { background: var(--red); }
+
+.h-info { flex: 1; min-width: 0; }
+.h-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; color: #58a6ff;
+  margin-bottom: 2px;
+}
+.h-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+.h-desc {
+  font-size: 10px; color: var(--text-muted);
+  margin-top: 3px;
+}
+.h-notes { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.h-note {
+  font-size: 10px; padding: 1px 7px; border-radius: 20px;
+  background: var(--yellow-bg); color: var(--yellow);
+  border: 1px solid var(--yellow-border);
+}
+
+.risk-pill {
+  font-size: 10px; padding: 2px 8px; border-radius: 20px;
+  flex-shrink: 0; align-self: center;
+  font-weight: 500;
+}
+.risk-pill.red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+.risk-pill.yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+.risk-pill.green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+
+/* MISSING HEADERS */
+.missing-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px;
+  transition: background 0.1s;
+}
+.missing-row:hover { background: var(--bg-raised); }
+.missing-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; color: var(--text-secondary);
+  flex: 1;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.missing-desc { font-size: 10px; color: var(--text-muted); }
+
+/* FINGERPRINT */
+.fp-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px;
+  background: rgba(248,81,73,0.05);
+  border: 1px solid var(--red-border);
+  margin-bottom: 6px;
+}
+.fp-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; color: var(--red); min-width: 160px;
+}
+.fp-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--text-secondary);
+  flex: 1;
+}
+
+/* PLACEHOLDER */
+.placeholder {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  gap: 12px;
+}
+.placeholder svg { width: 48px; height: 48px; opacity: 0.3; }
+.placeholder-title { font-size: 14px; color: var(--text-secondary); }
+.placeholder-sub { font-size: 12px; text-align: center; max-width: 280px; line-height: 1.6; }
+
+/* ERROR */
+.error-box {
+  background: var(--red-bg);
+  border: 1px solid var(--red-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--red);
+  margin-bottom: 16px;
+  display: none;
+}
+
+/* TARGET INFO BAR */
+.target-bar {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: none;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.target-item { display: flex; flex-direction: column; gap: 2px; }
+.target-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+.target-val { font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text-primary); }
+
+/* CATEGORY FILTER */
+.filter-row {
+  display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.filter-btn {
+  font-size: 11px; padding: 4px 12px; border-radius: 20px;
+  background: var(--bg-raised); color: var(--text-secondary);
+  border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.15s;
+}
+.filter-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+.filter-btn.active { background: rgba(31,111,235,0.15); color: #58a6ff; border-color: rgba(31,111,235,0.3); }
+
+/* SCROLLBARS */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 4px; }
+
+/* HIDDEN */
+.hidden { display: none !important; }
+.page { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-y: auto; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18L20 8.5v7l-8 4-8-4v-7l8-4.32z"/>
+        </svg>
+      </div>
+      <span class="logo-text">HeaderScan</span>
+    </div>
+
+    <div class="nav">
+      <div class="nav-group-label">Tools</div>
+      <div class="nav-item active" id="nav-analyzer" onclick="showPage('analyzer')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v4H3V3zm0 7h18v4H3v-4zm0 7h18v4H3v-4z"/></svg>
+        Header Analyzer
+      </div>
+      <div class="nav-item" id="nav-history" onclick="showPage('history')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 2a8 8 0 110 16A8 8 0 0112 4zm0 3a1 1 0 00-1 1v5a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L13 13.586V10a1 1 0 00-1-1z"/></svg>
+        History
+      </div>
+      <div class="nav-item" id="nav-audit" onclick="showPage('audit')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.25 3.75 10.15 9 11.25C17.25 21.15 21 16.25 21 11V5l-9-4zm0 2.18L19 6.5V11c0 4.25-2.9 8.2-7 9.45C7.9 19.2 5 15.25 5 11V6.5l7-3.32z"/></svg>
+        Security Audit
+      </div>
+
+      <div class="nav-group-label" style="margin-top:16px;">Others</div>
+      <div class="nav-item" id="nav-settings" onclick="showPage('settings')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 3a4 4 0 110 8 4 4 0 010-8zm0 10c-2.67 0-8 1.34-8 4v1h16v-1c0-2.66-5.33-4-8-4z"/></svg>
+        Settings
+      </div>
+      <div class="nav-item" id="nav-about" onclick="showPage('about')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        About
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      Server must be running on<br>
+      <span style="color:#58a6ff;font-family:'DM Mono',monospace;font-size:10px;">localhost:5000</span><br><br>
+      <span style="color:#3fb950;">●</span> <span id="server-status">Checking...</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">Header Analyzer</div>
+        <div class="topbar-sub">HTTP response header inspection &amp; security audit</div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-dot"></div>
+        <div class="topbar-status" id="top-status">Ready</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- SEARCH -->
+      <div class="search-row">
+        <div class="url-wrap">
+          <div class="url-icon">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 3a8 8 0 100 16A8 8 0 0011 3zm-9 8a9 9 0 1118 0A9 9 0 012 11zm15.707 5.293l-3.387-3.387A7 7 0 1117.9 9.1l3.387 3.387a1 1 0 01-1.414 1.414l-3.387-3.387A7.03 7.03 0 0115 11a7 7 0 01-7 7 7 7 0 01-7-7 7 7 0 017-7 7.03 7.03 0 014.9 1.9l3.387-3.387z"/></svg>
+          </div>
+          <input class="url-input" id="url-input" type="text" placeholder="https://example.com" />
+        </div>
+        <button class="btn-analyze" id="btn-analyze" onclick="runAnalysis()">
+          <svg viewBox="0 0 24 24" fill="currentColor" id="btn-icon"><path d="M8 5v14l11-7z"/></svg>
+          Analyze
+        </button>
+      </div>
+
+      <!-- ERROR -->
+      <div class="error-box" id="error-box"></div>
+
+      <!-- TARGET BAR -->
+      <div class="target-bar" id="target-bar" style="display:none;flex">
+        <div class="target-item">
+          <div class="target-label">Target</div>
+          <div class="target-val" id="t-url">—</div>
+        </div>
+        <div class="target-item">
+          <div class="target-label">IP</div>
+          <div class="target-val" id="t-ip">—</div>
+        </div>
+        <div class="target-item">
+          <div class="target-label">Status</div>
+          <div class="target-val" id="t-status">—</div>
+        </div>
+        <div class="target-item">
+          <div class="target-label">Total Headers</div>
+          <div class="target-val" id="t-total">—</div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row" id="stats-row" style="display:none">
+        <div class="stat">
+          <div class="stat-label">Total Headers</div>
+          <div class="stat-val blue" id="s-total">0</div>
+          <div class="stat-sub">response headers</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Critical / Exposed</div>
+          <div class="stat-val red" id="s-red">0</div>
+          <div class="stat-sub">high risk findings</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Warnings</div>
+          <div class="stat-val yellow" id="s-yellow">0</div>
+          <div class="stat-sub">medium risk</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Secure</div>
+          <div class="stat-val green" id="s-green">0</div>
+          <div class="stat-sub">no issues</div>
+        </div>
+      </div>
+
+      <!-- PLACEHOLDER -->
+      <div id="placeholder" class="placeholder">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v4H3V3zm0 7h18v4H3v-4zm0 7h18v4H3v-4z"/></svg>
+        <div class="placeholder-title">No analysis yet</div>
+        <div class="placeholder-sub">Enter a URL above and click Analyze to inspect HTTP response headers.</div>
+      </div>
+
+      <!-- RESULTS -->
+      <div id="results" class="hidden">
+
+        <!-- FINGERPRINT ALERT -->
+        <div id="fp-section" class="hidden" style="margin-bottom:16px;">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title" style="color:var(--red);">⚠ Exposed Fingerprints</div>
+              <div class="panel-badge" id="fp-count">0</div>
+            </div>
+            <div class="panel-body" id="fp-body"></div>
+          </div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="grid" id="main-grid">
+
+          <!-- ALL HEADERS -->
+          <div class="panel" style="grid-column:1/-1;">
+            <div class="panel-head">
+              <div class="panel-title">All Headers</div>
+              <div class="panel-badge" id="h-count">0</div>
+            </div>
+            <div class="panel-body">
+              <div class="filter-row" id="filter-row"></div>
+              <div id="header-list"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- BOTTOM GRID -->
+        <div class="grid">
+          <!-- MISSING SECURITY -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title" style="color:var(--red);">Missing Security Headers</div>
+              <div class="panel-badge" id="missing-count">0</div>
+            </div>
+            <div class="panel-body" id="missing-body"></div>
+          </div>
+
+          <!-- SECURITY SCORE -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Security Score</div>
+            </div>
+            <div class="panel-body" style="padding:20px;">
+              <div style="display:flex;align-items:center;gap:20px;">
+                <div style="position:relative;width:90px;height:90px;flex-shrink:0;">
+                  <canvas id="score-canvas" width="90" height="90"></canvas>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                    <div style="text-align:center;">
+                      <div style="font-size:22px;font-weight:600;" id="score-num">—</div>
+                      <div style="font-size:10px;color:var(--text-muted);">/ 100</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="flex:1;">
+                  <div id="score-grade" style="font-size:28px;font-weight:700;margin-bottom:4px;">—</div>
+                  <div id="score-label" style="font-size:12px;color:var(--text-muted);">Run an analysis to see score</div>
+                  <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;" id="score-details"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  
+  <!-- PAGE: HISTORY -->
+  <div id="page-history" class="page hidden">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">History</div>
+        <div class="topbar-sub">Past analyses from this session</div>
+      </div>
+      <div class="topbar-right">
+        <button onclick="clearHistory()" style="font-size:12px;padding:6px 14px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);cursor:pointer;">Clear all</button>
+      </div>
+    </div>
+    <div class="content">
+      <div id="history-list">
+        <div class="placeholder">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:48px;height:48px;opacity:0.3;"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 2a8 8 0 110 16A8 8 0 0112 4zm0 3a1 1 0 00-1 1v5a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L13 13.586V10a1 1 0 00-1-1z"/></svg>
+          <div class="placeholder-title">No history yet</div>
+          <div class="placeholder-sub">Run an analysis to see it appear here.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: SECURITY AUDIT -->
+  <div id="page-audit" class="page hidden">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">Security Audit</div>
+        <div class="topbar-sub">HTTP security header best practices checklist</div>
+      </div>
+    </div>
+    <div class="content">
+      <div id="audit-content"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: SETTINGS -->
+  <div id="page-settings" class="page hidden">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">Settings</div>
+        <div class="topbar-sub">Configure the analyzer</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="panel" style="max-width:500px;">
+        <div class="panel-head"><div class="panel-title">Connection</div></div>
+        <div class="panel-body" style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">Server port</div>
+            <input id="setting-port" type="number" value="5000" style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'DM Mono',monospace;font-size:13px;outline:none;">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">Request timeout (seconds)</div>
+            <input id="setting-timeout" type="number" value="10" min="1" max="60" style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'DM Mono',monospace;font-size:13px;outline:none;">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">User-Agent</div>
+            <input id="setting-ua" type="text" value="Mozilla/5.0 (compatible; HeaderAnalyzer-OSINT/1.0)" style="width:100%;padding:9px 12px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-family:'DM Mono',monospace;font-size:12px;outline:none;">
+          </div>
+          <button onclick="saveSettings()" style="padding:10px 20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;align-self:flex-start;">Save settings</button>
+          <div id="settings-saved" style="font-size:12px;color:var(--green);display:none;">Settings saved.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: ABOUT -->
+  <div id="page-about" class="page hidden">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">About</div>
+        <div class="topbar-sub">HeaderScan — OSINT Tool</div>
+      </div>
+    </div>
+    <div class="content">
+      <div style="max-width:560px;display:flex;flex-direction:column;gap:16px;">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">HeaderScan</div></div>
+          <div class="panel-body" style="padding:16px;">
+            <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:12px;">HTTP response header analyzer for OSINT and security auditing. Inspects headers for exposed fingerprints, missing security directives, cookie flags, CORS policy, CDN info, and computes a security score.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="background:var(--bg-raised);border-radius:8px;padding:12px;">
+                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.8px;">Version</div>
+                <div style="font-size:13px;font-family:'DM Mono',monospace;">1.0.0</div>
+              </div>
+              <div style="background:var(--bg-raised);border-radius:8px;padding:12px;">
+                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.8px;">Backend</div>
+                <div style="font-size:13px;font-family:'DM Mono',monospace;">Flask / Python</div>
+              </div>
+              <div style="background:var(--bg-raised);border-radius:8px;padding:12px;">
+                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.8px;">Headers in DB</div>
+                <div style="font-size:13px;font-family:'DM Mono',monospace;">50+</div>
+              </div>
+              <div style="background:var(--bg-raised);border-radius:8px;padding:12px;">
+                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.8px;">License</div>
+                <div style="font-size:13px;font-family:'DM Mono',monospace;">MIT</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Risk legend</div></div>
+          <div class="panel-body" style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="dot red" style="flex-shrink:0;"></div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:var(--red);">Critical / Exposed</div>
+                <div style="font-size:12px;color:var(--text-muted);">Missing critical security header or exposed server fingerprint.</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="dot yellow" style="flex-shrink:0;"></div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:var(--yellow);">Warning</div>
+                <div style="font-size:12px;color:var(--text-muted);">Medium risk issue, misconfigured header, or informational exposure.</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="dot green" style="flex-shrink:0;"></div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:var(--green);">Normal</div>
+                <div style="font-size:12px;color:var(--text-muted);">Standard header, no security concern.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Setup</div></div>
+          <div class="panel-body" style="padding:16px;">
+            <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-secondary);background:var(--bg-raised);padding:12px;border-radius:8px;line-height:2;">
+              pip install flask flask-cors requests<br>
+              python header_server.py
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+let currentData = null;
+let activeFilter = 'all';
+
+async function checkServer() {
+  try {
+    const r = await fetch(API + '/ping', {signal: AbortSignal.timeout(2000)});
+    if (r.ok) {
+      document.getElementById('server-status').textContent = 'Server online';
+      document.getElementById('server-status').style.color = '#3fb950';
+    }
+  } catch {
+    document.getElementById('server-status').textContent = 'Server offline';
+    document.getElementById('server-status').style.color = '#f85149';
+  }
+}
+
+checkServer();
+setInterval(checkServer, 5000);
+
+document.getElementById('url-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runAnalysis();
+});
+
+async function runAnalysis() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) return;
+
+  const btn = document.getElementById('btn-analyze');
+  const icon = document.getElementById('btn-icon');
+  btn.disabled = true;
+  icon.innerHTML = '<path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8 3.58-8 8-8zm0 3v5l4 2-1 1.73L11 13V7h1z"/>';
+  icon.classList.add('spin');
+  document.getElementById('top-status').textContent = 'Analyzing...';
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('placeholder').classList.add('hidden');
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('stats-row').style.display = 'none';
+  document.getElementById('target-bar').style.display = 'none';
+
+  try {
+    const resp = await fetch(API + '/analyze', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url}),
+    });
+
+    const data = await resp.json();
+
+    if (data.error) throw new Error(data.error);
+
+    currentData = data;
+    renderResults(data);
+    document.getElementById('top-status').textContent = 'Done';
+
+  } catch (e) {
+    const eb = document.getElementById('error-box');
+    eb.textContent = 'Error: ' + e.message;
+    eb.style.display = 'block';
+    document.getElementById('placeholder').classList.remove('hidden');
+    document.getElementById('top-status').textContent = 'Error';
+  } finally {
+    btn.disabled = false;
+    icon.classList.remove('spin');
+    icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  }
+}
+
+function renderResults(data) {
+  document.getElementById('results').classList.remove('hidden');
+
+  document.getElementById('target-bar').style.display = 'flex';
+  document.getElementById('t-url').textContent = data.final_url || data.url;
+  document.getElementById('t-ip').textContent = data.ip || '—';
+  document.getElementById('t-status').textContent = data.status_code;
+  document.getElementById('t-total').textContent = data.total;
+
+  const c = data.counts;
+  const missing = data.missing_security.length;
+
+  document.getElementById('stats-row').style.display = 'grid';
+  document.getElementById('s-total').textContent = data.total;
+  document.getElementById('s-red').textContent = (c.red || 0) + missing;
+  document.getElementById('s-yellow').textContent = c.yellow || 0;
+  document.getElementById('s-green').textContent = c.green || 0;
+
+  addToHistory(data);
+  renderFingerprints(data.exposed_fingerprint);
+  renderHeaders(data.headers, 'all');
+  renderMissing(data.missing_security);
+  renderScore(data);
+  buildFilters(data.headers);
+}
+
+function buildFilters(headers) {
+  const cats = ['all', ...new Set(headers.map(h => h.category))];
+  const row = document.getElementById('filter-row');
+  row.innerHTML = '';
+  cats.forEach(cat => {
+    const btn = document.createElement('div');
+    btn.className = 'filter-btn' + (cat === 'all' ? ' active' : '');
+    btn.textContent = cat === 'all' ? 'All' : cat;
+    btn.onclick = () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = cat;
+      renderHeaders(currentData.headers, cat);
+    };
+    row.appendChild(btn);
+  });
+}
+
+function renderHeaders(headers, filter) {
+  const list = document.getElementById('header-list');
+  const filtered = filter === 'all' ? headers : headers.filter(h => h.category === filter);
+  document.getElementById('h-count').textContent = filtered.length;
+
+  list.innerHTML = filtered.map(h => `
+    <div class="h-row">
+      <div class="dot ${h.risk}"></div>
+      <div class="h-info">
+        <div class="h-name">${escHtml(h.name)}</div>
+        <div class="h-val" title="${escHtml(h.value)}">${escHtml(h.value)}</div>
+        <div class="h-desc">${escHtml(h.description)}</div>
+        ${h.notes && h.notes.length ? `<div class="h-notes">${h.notes.map(n => `<span class="h-note">${escHtml(n)}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="risk-pill ${h.risk}">${escHtml(h.risk_label)}</div>
+    </div>
+  `).join('');
+}
+
+function renderMissing(missing) {
+  const body = document.getElementById('missing-body');
+  document.getElementById('missing-count').textContent = missing.length;
+  if (!missing.length) {
+    body.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--text-muted);">All security headers present ✓</div>';
+    return;
+  }
+  body.innerHTML = missing.map(h => `
+    <div class="missing-row">
+      <div class="dot red"></div>
+      <div style="flex:1;">
+        <div class="missing-name">${escHtml(h.name)}</div>
+        <div class="missing-desc">${escHtml(h.description)}</div>
+      </div>
+      <div class="risk-pill red">${escHtml(h.risk_label)}</div>
+    </div>
+  `).join('');
+}
+
+function renderFingerprints(fp) {
+  const section = document.getElementById('fp-section');
+  if (!fp.length) { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  document.getElementById('fp-count').textContent = fp.length;
+  document.getElementById('fp-body').innerHTML = `<div style="padding:8px;">` +
+    fp.map(f => `
+      <div class="fp-row">
+        <div class="fp-name">${escHtml(f.name)}</div>
+        <div class="fp-val">${escHtml(f.value)}</div>
+        <div class="risk-pill red">Exposed</div>
+      </div>
+    `).join('') + `</div>`;
+}
+
+function renderScore(data) {
+  const TOTAL_SECURITY = 6;
+  const missing = data.missing_security.length;
+  const present = TOTAL_SECURITY - missing;
+  const fpPenalty = data.exposed_fingerprint.length * 10;
+  const base = Math.round((present / TOTAL_SECURITY) * 100);
+  const score = Math.max(0, base - fpPenalty);
+
+  document.getElementById('score-num').textContent = score;
+
+  let grade, color, label;
+  if (score >= 90) { grade = 'A+'; color = '#3fb950'; label = 'Excellent security posture'; }
+  else if (score >= 75) { grade = 'A'; color = '#3fb950'; label = 'Good security posture'; }
+  else if (score >= 60) { grade = 'B'; color = '#d29922'; label = 'Acceptable, improvements needed'; }
+  else if (score >= 40) { grade = 'C'; color = '#d29922'; label = 'Several issues found'; }
+  else if (score >= 20) { grade = 'D'; color = '#f85149'; label = 'Poor security configuration'; }
+  else { grade = 'F'; color = '#f85149'; label = 'Critical security failures'; }
+
+  document.getElementById('score-grade').textContent = grade;
+  document.getElementById('score-grade').style.color = color;
+  document.getElementById('score-label').textContent = label;
+
+  const details = [
+    { label: 'Security headers', val: `${present}/${TOTAL_SECURITY}`, ok: present === TOTAL_SECURITY },
+    { label: 'Fingerprints exposed', val: data.exposed_fingerprint.length, ok: data.exposed_fingerprint.length === 0 },
+    { label: 'Critical issues', val: data.counts.red || 0, ok: (data.counts.red || 0) === 0 },
+  ];
+
+  document.getElementById('score-details').innerHTML = details.map(d => `
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:11px;color:var(--text-muted);">${d.label}</span>
+      <span style="font-size:12px;font-weight:500;color:${d.ok ? 'var(--green)' : 'var(--red)'};">${d.val}</span>
+    </div>
+  `).join('');
+
+  const canvas = document.getElementById('score-canvas');
+  const ctx = canvas.getContext('2d');
+  const cx = 45, cy = 45, r = 35;
+  ctx.clearRect(0, 0, 90, 90);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = '#21262d';
+  ctx.lineWidth = 8;
+  ctx.stroke();
+  const angle = (score / 100) * Math.PI * 2 - Math.PI / 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, -Math.PI / 2, angle);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+}
+
+
+
+const history_list = [];
+
+function showPage(page) {
+  const pages = ['analyzer', 'history', 'audit', 'settings', 'about'];
+  pages.forEach(p => {
+    const navEl = document.getElementById('nav-' + p);
+    const pageEl = document.getElementById('page-' + p);
+    if (navEl) navEl.classList.remove('active');
+    if (pageEl) pageEl.classList.add('hidden');
+  });
+
+  const navEl = document.getElementById('nav-' + page);
+  const pageEl = document.getElementById('page-' + page);
+  if (navEl) navEl.classList.add('active');
+
+  if (page === 'analyzer') {
+    document.querySelector('.main > .topbar').style.display = 'flex';
+    document.querySelector('.content').style.display = 'block';
+  } else {
+    document.querySelector('.main > .topbar').style.display = 'none';
+    document.querySelector('.content').style.display = 'none';
+    if (pageEl) pageEl.classList.remove('hidden');
+  }
+
+  if (page === 'audit') renderAuditPage();
+  if (page === 'history') renderHistoryPage();
+}
+
+function addToHistory(data) {
+  history_list.unshift({
+    url: data.final_url || data.url,
+    ip: data.ip,
+    status: data.status_code,
+    total: data.total,
+    score: computeScore(data),
+    time: new Date().toLocaleTimeString(),
+    data: data,
+  });
+  if (history_list.length > 50) history_list.pop();
+}
+
+function computeScore(data) {
+  const TOTAL_SECURITY = 6;
+  const missing = data.missing_security.length;
+  const present = TOTAL_SECURITY - missing;
+  const fpPenalty = data.exposed_fingerprint.length * 10;
+  return Math.max(0, Math.round((present / TOTAL_SECURITY) * 100) - fpPenalty);
+}
+
+function clearHistory() {
+  history_list.length = 0;
+  renderHistoryPage();
+}
+
+function renderHistoryPage() {
+  const el = document.getElementById('history-list');
+  if (!history_list.length) {
+    el.innerHTML = `<div class="placeholder">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:48px;height:48px;opacity:0.3;"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 2a8 8 0 110 16A8 8 0 0112 4zm0 3a1 1 0 00-1 1v5a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L13 13.586V10a1 1 0 00-1-1z"/></svg>
+      <div class="placeholder-title">No history yet</div>
+      <div class="placeholder-sub">Run an analysis to see it appear here.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = history_list.map((h, i) => {
+    let scoreColor = h.score >= 75 ? 'var(--green)' : h.score >= 50 ? 'var(--yellow)' : 'var(--red)';
+    return `<div class="h-row" style="cursor:pointer;" onclick="loadFromHistory(${i})">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-family:'DM Mono',monospace;color:#58a6ff;margin-bottom:3px;">${escHtml(h.url)}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${h.time} &nbsp;·&nbsp; IP: ${escHtml(h.ip)} &nbsp;·&nbsp; Status: ${h.status} &nbsp;·&nbsp; ${h.total} headers</div>
+      </div>
+      <div style="font-size:18px;font-weight:600;color:${scoreColor};min-width:42px;text-align:right;">${h.score}</div>
+    </div>`;
+  }).join('');
+}
+
+function loadFromHistory(i) {
+  const entry = history_list[i];
+  document.getElementById('url-input').value = entry.url;
+  currentData = entry.data;
+  showPage('analyzer');
+  renderResults(entry.data);
+}
+
+function renderAuditPage() {
+  const checks = [
+    { name: 'Strict-Transport-Security', desc: 'Forces HTTPS for all connections. Prevents protocol downgrade attacks.', rec: 'max-age=31536000; includeSubDomains; preload', cat: 'Transport' },
+    { name: 'Content-Security-Policy', desc: 'Defines allowed content sources. Primary defense against XSS.', rec: "default-src 'self'; script-src 'self'; object-src 'none'", cat: 'XSS' },
+    { name: 'X-Content-Type-Options', desc: 'Prevents browsers from MIME-sniffing a response. Set to nosniff.', rec: 'nosniff', cat: 'MIME' },
+    { name: 'X-Frame-Options', desc: 'Prevents page from being embedded in iframes. Stops clickjacking.', rec: 'DENY or SAMEORIGIN', cat: 'Clickjacking' },
+    { name: 'Referrer-Policy', desc: 'Controls how much referrer info is included with requests.', rec: 'strict-origin-when-cross-origin', cat: 'Privacy' },
+    { name: 'Permissions-Policy', desc: 'Controls access to browser APIs like camera, mic, geolocation.', rec: "camera=(), microphone=(), geolocation=()", cat: 'Permissions' },
+    { name: 'Remove: Server', desc: 'Reveals web server software and version. Should be removed or obscured.', rec: 'Remove or set to empty string', cat: 'Fingerprint', danger: true },
+    { name: 'Remove: X-Powered-By', desc: 'Reveals backend language. Remove to reduce attack surface.', rec: 'Remove entirely', cat: 'Fingerprint', danger: true },
+    { name: 'Cookie: HttpOnly flag', desc: 'Prevents JavaScript access to cookies. Required on session cookies.', rec: 'Set-Cookie: id=val; HttpOnly; Secure; SameSite=Strict', cat: 'Cookies' },
+    { name: 'Cookie: Secure flag', desc: 'Ensures cookie is only sent over HTTPS.', rec: 'Set-Cookie: id=val; Secure', cat: 'Cookies' },
+    { name: 'Cookie: SameSite', desc: 'Prevents CSRF attacks. Strict or Lax recommended.', rec: 'SameSite=Strict', cat: 'Cookies' },
+    { name: 'CORS: no wildcard origin', desc: 'Wildcard Access-Control-Allow-Origin allows any domain to make requests.', rec: 'Specify exact origin instead of *', cat: 'CORS' },
+  ];
+
+  const cats = [...new Set(checks.map(c => c.cat))];
+  const present = currentData ? new Set(currentData.headers.map(h => h.name.toLowerCase())) : new Set();
+
+  document.getElementById('audit-content').innerHTML = cats.map(cat => {
+    const catChecks = checks.filter(c => c.cat === cat);
+    return `<div class="panel" style="margin-bottom:16px;">
+      <div class="panel-head">
+        <div class="panel-title">${cat}</div>
+      </div>
+      <div class="panel-body" style="padding:8px;">
+        ${catChecks.map(c => {
+          let dot = 'green', status = 'Recommended';
+          if (c.danger) { dot = present.has(c.name.replace('Remove: ','').toLowerCase()) ? 'red' : 'green'; }
+          else { dot = present.has(c.name.toLowerCase()) ? 'green' : 'red'; status = present.has(c.name.toLowerCase()) ? 'Present' : 'Missing'; }
+          return `<div class="h-row">
+            <div class="dot ${dot}"></div>
+            <div class="h-info">
+              <div class="h-name">${escHtml(c.name)}</div>
+              <div class="h-desc">${escHtml(c.desc)}</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:3px;">Recommended: <span style="font-family:'DM Mono',monospace;">${escHtml(c.rec)}</span></div>
+            </div>
+            <div class="risk-pill ${dot}">${status}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveSettings() {
+  const port = document.getElementById('setting-port').value;
+  window.API_PORT = port;
+  window.API = 'http://localhost:' + port;
+  document.getElementById('settings-saved').style.display = 'block';
+  setTimeout(() => document.getElementById('settings-saved').style.display = 'none', 2000);
+}
+
+function escHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
